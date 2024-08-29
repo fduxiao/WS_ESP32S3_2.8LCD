@@ -12,10 +12,6 @@ set(SDKCONFIG_DEFAULTS
     boards/AntiGM/sdkconfig.board
 )
 
-list(APPEND IDF_COMPONENTS
-    esp_lcd
-)
-
 list(APPEND MICROPY_DEF_BOARD
     MICROPY_HW_BOARD_NAME="AntiGM"
 )
