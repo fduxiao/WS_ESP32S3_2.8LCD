@@ -164,12 +164,49 @@ static mp_obj_t I80_malloc_dma(size_t n_args, const mp_obj_t *pos_args, mp_map_t
 
 static MP_DEFINE_CONST_FUN_OBJ_KW(I80_malloc_dma_obj, 1, I80_malloc_dma);
 
+static mp_obj_t I80_write_cmd(mp_obj_t self_in, mp_obj_t cmd_in, mp_obj_t param) {
+    I80_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_int_t cmd = mp_obj_get_int(cmd_in);
+    // get memory buffer from data
+    mp_buffer_info_t bufinfo;
+    if(!mp_get_buffer(param, &bufinfo, MP_BUFFER_READ)) {
+        mp_raise_TypeError("object with buffer protocol required for param");
+        return mp_const_none;
+    }
+    esp_err_t err = esp_lcd_panel_io_tx_param(self->io_handle, cmd, bufinfo.buf, bufinfo.len);
+    if(err != ESP_OK) {
+        mp_raise_OSError(err);
+    }
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_3(I80_write_cmd_obj, I80_write_cmd);
+
+
+static mp_obj_t I80_write_color(mp_obj_t self_in, mp_obj_t cmd_in, mp_obj_t param) {
+    I80_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_int_t cmd = mp_obj_get_int(cmd_in);
+    // get memory buffer from data
+    mp_buffer_info_t bufinfo;
+    if(!mp_get_buffer(param, &bufinfo, MP_BUFFER_READ)) {
+        mp_raise_TypeError("object with buffer protocol required for param");
+        return mp_const_none;
+    }
+    esp_err_t err = esp_lcd_panel_io_tx_color(self->io_handle, cmd, bufinfo.buf, bufinfo.len);
+    if(err != ESP_OK) {
+        mp_raise_OSError(err);
+    }
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_3(I80_write_color_obj, I80_write_color);
+
 
 // Collection of all static methods and locals of the new type.
 static const mp_rom_map_elem_t I80_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&I80_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&I80_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR_malloc_dma), MP_ROM_PTR(&I80_malloc_dma_obj) },
+    { MP_ROM_QSTR(MP_QSTR_write_cmd), MP_ROM_PTR(&I80_write_cmd_obj) },
+    { MP_ROM_QSTR(MP_QSTR_write_color), MP_ROM_PTR(&I80_write_color_obj) },
 };
 static MP_DEFINE_CONST_DICT(I80_locals_dict, I80_locals_dict_table);
 
