@@ -1,6 +1,7 @@
 // Include MicroPython API.
 #include "py/runtime.h"
 
+#include "blob.h"
 // ESP LCD API
 #include "esp_lcd_types.h"
 #include "esp_lcd_panel_io.h"
@@ -135,10 +136,40 @@ static mp_obj_t I80_deinit(mp_obj_t self_in) {
 static MP_DEFINE_CONST_FUN_OBJ_1(I80_deinit_obj, I80_deinit);
 
 
+// Make an i80 compatible memory
+static mp_obj_t I80_malloc_dma(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_self, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+        { MP_QSTR_size, MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = -1} },
+        { MP_QSTR_spiram, MP_ARG_KW_ONLY | MP_ARG_BOOL, {.u_bool = false} },
+    };
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    I80_obj_t *self = MP_OBJ_TO_PTR(args[0].u_obj);
+    mp_int_t size = args[1].u_int;
+    bool spiram = args[2].u_bool;
+
+    if(size <= 0) {
+        mp_raise_ValueError("size should be positive");
+        return mp_const_none;
+    }
+    
+    size_t usize = (size_t)size;
+
+    (void)self;
+    return new_dma_blob(usize, spiram);
+}
+
+static MP_DEFINE_CONST_FUN_OBJ_KW(I80_malloc_dma_obj, 1, I80_malloc_dma);
+
+
 // Collection of all static methods and locals of the new type.
 static const mp_rom_map_elem_t I80_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&I80_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&I80_deinit_obj) },
+    { MP_ROM_QSTR(MP_QSTR_malloc_dma), MP_ROM_PTR(&I80_malloc_dma_obj) },
 };
 static MP_DEFINE_CONST_DICT(I80_locals_dict, I80_locals_dict_table);
 
@@ -156,7 +187,7 @@ MP_DEFINE_CONST_OBJ_TYPE(
 // Define the module attributes.
 static const mp_rom_map_elem_t i8080_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_i8080) },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_I8080), (mp_obj_t)(&type_I80) },
+    { MP_ROM_QSTR(MP_QSTR_I8080), MP_ROM_PTR(&type_I80) },
 };
 
 static MP_DEFINE_CONST_DICT(i8080_globals, i8080_globals_table);

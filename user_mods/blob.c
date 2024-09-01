@@ -25,6 +25,7 @@ void* malloc_dma(size_t size, bool spiram) {
 mp_obj_t new_dma_blob(size_t size, bool spiram) {
     void* data = malloc_dma(size, spiram);
     if(data == NULL) {
+        mp_raise_OSError(CANNOT_ALLOCATE_MEMORY);
         return mp_const_none;
     }
     Blob_obj_t* self = mp_obj_malloc(Blob_obj_t, &type_Blob);
@@ -39,6 +40,17 @@ static mp_obj_t Blob_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
     self->size = 0;
     self->data = NULL;
     return MP_OBJ_FROM_PTR(self);;
+}
+
+// Blob should be used as a a buffer.
+static mp_int_t Blob_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo, mp_uint_t flags) {
+    Blob_obj_t* self = MP_OBJ_TO_PTR(self_in);
+
+    bufinfo->buf = self->data;
+    bufinfo->len = self->size;
+    bufinfo->typecode = BYTEARRAY_TYPECODE;
+    (void)flags;
+    return 0;
 }
 
 
@@ -67,7 +79,7 @@ static mp_obj_t Blob_malloc_dma(size_t n_args, const mp_obj_t *pos_args, mp_map_
     }
     
     size_t usize = (size_t)size;
-    void* data = malloc_dma(size, spiram);
+    void* data = malloc_dma(usize, spiram);
     if(data == NULL) {
         mp_raise_OSError(CANNOT_ALLOCATE_MEMORY);
         return mp_const_none;
@@ -132,6 +144,7 @@ MP_DEFINE_CONST_OBJ_TYPE(
     MP_QSTR_Blob,
     MP_TYPE_FLAG_NONE,
     make_new, Blob_make_new,
+    buffer, Blob_get_buffer,
     locals_dict, &Blob_locals_dict
 );
 
