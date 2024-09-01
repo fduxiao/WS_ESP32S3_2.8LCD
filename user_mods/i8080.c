@@ -14,8 +14,6 @@
 typedef struct _I80_obj_t {
     // All objects start with the base.
     mp_obj_base_t base;
-    int width;
-    int height;
     esp_lcd_i80_bus_handle_t i80_bus;
     esp_lcd_panel_io_handle_t io_handle;
 } I80_obj_t;
@@ -38,35 +36,35 @@ static mp_obj_t I80_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_a
     // we specify the dc, wr, data as keyword arguments. 
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_self, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
-        { MP_QSTR_width, MP_ARG_KW_ONLY | MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = -1} },
-        { MP_QSTR_height, MP_ARG_KW_ONLY | MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = -1} },
         { MP_QSTR_cs, MP_ARG_KW_ONLY | MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = -1} },
         { MP_QSTR_dc, MP_ARG_KW_ONLY | MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = -1} },
         { MP_QSTR_wr, MP_ARG_KW_ONLY | MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = -1} },
         { MP_QSTR_data, MP_ARG_KW_ONLY | MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL } },
+        { MP_QSTR_max_bytes, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1 } },
+        { MP_QSTR_freq, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 20000000 } },  // 200MHz
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     I80_obj_t *self = MP_OBJ_TO_PTR(args[0].u_obj);
-    mp_int_t width = args[1].u_int;
-    mp_int_t height = args[2].u_int;
-    mp_int_t cs = args[3].u_int;
-    mp_int_t dc = args[4].u_int;
-    mp_int_t wr = args[5].u_int;
-    mp_obj_t data = args[6].u_obj;
-
-    self->width = width;
-    self->height = height;
+    mp_int_t cs = args[1].u_int;
+    mp_int_t dc = args[2].u_int;
+    mp_int_t wr = args[3].u_int;
+    mp_obj_t data = args[4].u_obj;
+    mp_int_t max_bytes = args[5].u_int;
+    mp_int_t freq = args[6].u_int;
 
     // setup basic config
+    if(max_bytes <= 0) {
+        max_bytes = 100000;
+    }
     esp_lcd_i80_bus_config_t bus_config = {
         .clk_src = LCD_CLK_SRC_DEFAULT,
         .dc_gpio_num = (int)dc,
         .wr_gpio_num = (int)wr,
         .bus_width = 0,
-        .max_transfer_bytes = width * height * sizeof(uint16_t) / 10,
+        .max_transfer_bytes = max_bytes,
         // .dma_burst_size = EXAMPLE_DMA_BURST_SIZE,  // unavailable in v4.4
     };
 
@@ -89,7 +87,7 @@ static mp_obj_t I80_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_a
     // setup the panel io
     esp_lcd_panel_io_i80_config_t io_config = {
         .cs_gpio_num = cs,
-        .pclk_hz = 20000000,  // 20MHz
+        .pclk_hz = freq,  // 20MHz
         .trans_queue_depth = 10,
         .dc_levels = {
             .dc_idle_level = 0,

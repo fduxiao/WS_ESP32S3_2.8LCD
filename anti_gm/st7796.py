@@ -11,7 +11,7 @@ class ST7796I80(ST7796):
         self.res = Pin(res, Pin.OUT)
         self.blk = PWM(Pin(blk), duty=1023, freq=800)
         self.i80_driver = I8080()
-        self.i80_driver.init(cs=cs, dc=dc, wr=wr, data=data, width=width, height=height)
+        self.i80_driver.init(cs=cs, dc=dc, wr=wr, data=data, freq=20_000_000, max_bytes=width * height * 2 // 10)
         self.rotate = 0
 
     def deinit(self):
