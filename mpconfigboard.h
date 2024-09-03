@@ -1,4 +1,9 @@
-#define MICROPY_HW_BOARD_NAME               "ESP32S3 module (spiram octal)"
+#ifdef MICROPY_HW_BOARD_NAME
+#undef MICROPY_HW_BOARD_NAME
+#endif
+
+#define MICROPY_HW_BOARD_NAME               "AntiGM (esp32s3 spiram octal)"
+
 #define MICROPY_HW_MCU_NAME                 "ESP32S3"
 
 #define MICROPY_PY_MACHINE_DAC              (0)
