@@ -1,0 +1,4 @@
+HERE=`dirname $0`
+HERE=`realpath $HERE`
+export USER_C_MODULES=$HERE/user_mods/micropython.cmake
+export BOARD=AntiGM
