@@ -1,5 +1,8 @@
 from machine import *
+import i8080
 from . import st7796
+
+i8080.clean_all()
 
 sd = SDCard(cs=Pin(42), mosi=Pin(41), sck=Pin(40), miso=Pin(39), slot=2)
 

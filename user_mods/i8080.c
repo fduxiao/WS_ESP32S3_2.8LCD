@@ -10,12 +10,84 @@
 #define LCD_CLK_SRC_DEFAULT LCD_CLK_SRC_PLL160M
 #endif
 
+
+// We must use an i80 bus together with a panel io. This structure contains them both.
+// When we want to del it, we have to first del the panel io related with it.
+// So, we have to put them together to preserve the infomation even when micropython is reset.
+
+typedef struct _i80_handles_t {
+    esp_lcd_i80_bus_handle_t i80_bus;
+    esp_lcd_panel_io_handle_t io_handle;
+} i80_handles_t;
+
+static i80_handles_t* g_i80_handles[SOC_LCD_I80_BUSES] = {NULL};
+#define HANDLES(i) (g_i80_handles[i])
+
+// We have to check whether we have free buses before we can create a bus object.
+// Also if you soft-reset micropython, the bus may not be deinit. I provide a mechanism
+// to memorize all used buses and clean them.
+
+int new_i80_handles() {
+    for(int i = 0; i < SOC_LCD_I80_BUSES; i++) {
+        if(HANDLES(i) == NULL) {
+            i80_handles_t *ptr = heap_caps_malloc(sizeof(i80_handles_t), MALLOC_CAP_DEFAULT);
+            ptr->i80_bus = 0;
+            ptr->io_handle = 0;
+            if(ptr == NULL) {
+                return -1;
+            }
+            HANDLES(i) = ptr;
+            return i;
+        }
+    }
+    return -1;
+}
+
+esp_err_t i80_handles_del(int id) {
+    if(id < 0) {
+        return ESP_OK;
+    }
+    i80_handles_t* handles = HANDLES(id);
+
+    if(handles == NULL) {
+        return ESP_OK;
+    }
+
+    if(handles->io_handle != NULL) {
+        esp_err_t err = esp_lcd_panel_io_del(handles->io_handle);
+        if(err != ESP_OK) {
+            return err;
+        }
+        handles->io_handle = NULL;
+    }
+
+    if(handles->i80_bus != NULL) {
+        esp_err_t err = esp_lcd_del_i80_bus(handles->i80_bus);
+        if(err != ESP_OK) {
+            return err;
+        }
+        handles->i80_bus = NULL;
+    }
+    heap_caps_free(handles);
+    HANDLES(id) = NULL;
+    return ESP_OK;
+}
+
+esp_err_t i80_handles_clean_all() {
+   for(int i = 0; i < SOC_LCD_I80_BUSES; i++) {
+        esp_err_t err = i80_handles_del(i);
+        if(err != ESP_OK) {
+            return err;
+        }
+    }
+    return ESP_OK;
+}
+
 // This structure represents the i8080 bus class I80
 typedef struct _I80_obj_t {
     // All objects start with the base.
     mp_obj_base_t base;
-    esp_lcd_i80_bus_handle_t i80_bus;
-    esp_lcd_panel_io_handle_t io_handle;
+    int handles_id;
 } I80_obj_t;
 
 
@@ -23,8 +95,7 @@ typedef struct _I80_obj_t {
 static mp_obj_t I80_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     // Allocates the new object and sets the type.
     I80_obj_t *self = mp_obj_malloc(I80_obj_t, type);
-    self->i80_bus = NULL;
-    self->io_handle = NULL;
+    self->handles_id = -1;
 
     // The make_new function always returns self.
     return MP_OBJ_FROM_PTR(self);
@@ -33,6 +104,12 @@ static mp_obj_t I80_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_
 
 // Initialize the i80 bus.
 static mp_obj_t I80_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    int h_id = new_i80_handles();
+    if(h_id < 0) {
+        mp_raise_OSError(CANNOT_ALLOCATE_MEMORY);
+        return mp_const_none;
+    }
+    i80_handles_t* handles = HANDLES(h_id);
     // we specify the dc, wr, data as keyword arguments. 
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_self, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
@@ -54,6 +131,8 @@ static mp_obj_t I80_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_a
     mp_obj_t data = args[4].u_obj;
     mp_int_t max_bytes = args[5].u_int;
     mp_int_t freq = args[6].u_int;
+
+    self->handles_id = h_id;
 
     // setup basic config
     if(max_bytes <= 0) {
@@ -78,7 +157,7 @@ static mp_obj_t I80_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_a
     }
 
     // create the i80 bus
-    esp_err_t err = esp_lcd_new_i80_bus(&bus_config, &self->i80_bus);
+    esp_err_t err = esp_lcd_new_i80_bus(&bus_config, &handles->i80_bus);
     if(err != ESP_OK) {
         mp_raise_OSError(err);
         return mp_const_none;
@@ -98,7 +177,7 @@ static mp_obj_t I80_init(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_a
         .lcd_cmd_bits = 8,
         .lcd_param_bits = 8,
     };
-    err = esp_lcd_new_panel_io_i80(self->i80_bus, &io_config, &self->io_handle);
+    err = esp_lcd_new_panel_io_i80(handles->i80_bus, &io_config, &handles->io_handle);
     if(err != ESP_OK) {
         mp_raise_OSError(err);
         return mp_const_none;
@@ -111,22 +190,11 @@ static MP_DEFINE_CONST_FUN_OBJ_KW(I80_init_obj, 1, I80_init);
 
 static mp_obj_t I80_deinit(mp_obj_t self_in) {
     I80_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    if(self->io_handle != NULL) {
-        esp_err_t err = esp_lcd_panel_io_del(self->io_handle);
-        if(err != ESP_OK) {
-            mp_raise_OSError(err);
-            return mp_const_none;
-        }
-        self->io_handle = NULL;
-    }
 
-    if(self->i80_bus != NULL) {
-        esp_err_t err = esp_lcd_del_i80_bus(self->i80_bus);
-        if(err != ESP_OK) {
-            mp_raise_OSError(err);
-            return mp_const_none;
-        }
-        self->i80_bus = NULL;
+    esp_err_t err = i80_handles_del(self->handles_id);
+    if(err != ESP_OK) {
+        mp_raise_OSError(err);
+        return mp_const_none;
     }
     return mp_const_none;
 }
@@ -164,6 +232,7 @@ static MP_DEFINE_CONST_FUN_OBJ_KW(I80_malloc_dma_obj, 1, I80_malloc_dma);
 
 static mp_obj_t I80_write_cmd(mp_obj_t self_in, mp_obj_t cmd_in, mp_obj_t param) {
     I80_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    i80_handles_t *handles = HANDLES(self->handles_id);
     mp_int_t cmd = mp_obj_get_int(cmd_in);
     // get memory buffer from data
     mp_buffer_info_t bufinfo;
@@ -171,7 +240,7 @@ static mp_obj_t I80_write_cmd(mp_obj_t self_in, mp_obj_t cmd_in, mp_obj_t param)
         mp_raise_TypeError("object with buffer protocol required for param");
         return mp_const_none;
     }
-    esp_err_t err = esp_lcd_panel_io_tx_param(self->io_handle, cmd, bufinfo.buf, bufinfo.len);
+    esp_err_t err = esp_lcd_panel_io_tx_param(handles->io_handle, cmd, bufinfo.buf, bufinfo.len);
     if(err != ESP_OK) {
         mp_raise_OSError(err);
     }
@@ -182,6 +251,7 @@ static MP_DEFINE_CONST_FUN_OBJ_3(I80_write_cmd_obj, I80_write_cmd);
 
 static mp_obj_t I80_write_color(mp_obj_t self_in, mp_obj_t cmd_in, mp_obj_t param) {
     I80_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    i80_handles_t *handles = HANDLES(self->handles_id);
     mp_int_t cmd = mp_obj_get_int(cmd_in);
     // get memory buffer from data
     mp_buffer_info_t bufinfo;
@@ -189,7 +259,7 @@ static mp_obj_t I80_write_color(mp_obj_t self_in, mp_obj_t cmd_in, mp_obj_t para
         mp_raise_TypeError("object with buffer protocol required for param");
         return mp_const_none;
     }
-    esp_err_t err = esp_lcd_panel_io_tx_color(self->io_handle, cmd, bufinfo.buf, bufinfo.len);
+    esp_err_t err = esp_lcd_panel_io_tx_color(handles->io_handle, cmd, bufinfo.buf, bufinfo.len);
     if(err != ESP_OK) {
         mp_raise_OSError(err);
     }
@@ -219,10 +289,22 @@ MP_DEFINE_CONST_OBJ_TYPE(
 );
 
 
+// The micropython wrapper of i80_handles_clean_all
+static mp_obj_t i80_clean_all() {
+    esp_err_t err = i80_handles_clean_all();
+    if(err != ESP_OK) {
+        mp_raise_OSError(err);
+    }
+    return mp_const_none;
+}
+
+static MP_DEFINE_CONST_FUN_OBJ_0(i80_clean_all_obj, i80_clean_all);
+
 // Define the module attributes.
 static const mp_rom_map_elem_t i8080_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_i8080) },
     { MP_ROM_QSTR(MP_QSTR_I8080), MP_ROM_PTR(&type_I80) },
+    { MP_ROM_QSTR(MP_QSTR_clean_all), MP_ROM_PTR(&i80_clean_all_obj) },
 };
 
 static MP_DEFINE_CONST_DICT(i8080_globals, i8080_globals_table);
