@@ -106,7 +106,8 @@ class ST7796(FrameBuffer):
             self.cs = Pin(cs, Pin.OUT, value=1)
         if dc:
             self.dc = Pin(dc, Pin.OUT, value=0)
-        self.blk = PWM(Pin(blk), duty=1023, freq=800)
+        self.blk_pwm = PWM(Pin(blk), duty=1023, freq=800)
+        self.blk_value = 0
         self.width = width
         self.height = height
 
@@ -125,10 +126,6 @@ class ST7796(FrameBuffer):
         size = dx * dy * 2  # rgb565
         self.buf = bytearray(size)
         super().__init__(self.buf, dx, dy, RGB565)
-
-        # reset and initialize
-        self.reset()
-        self.init()
 
     def hard_reset(self):
         self.rst(0)
@@ -215,7 +212,7 @@ class ST7796(FrameBuffer):
         self.write_cmd(self.DISPLAY_ON)
 
     def deinit(self):
-        self.blk.deinit()
+        self.blk_pwm.deinit()
 
     # overload the following for different peripherals
     def write_cmd(self, cmd, *args):
@@ -227,6 +224,13 @@ class ST7796(FrameBuffer):
     def write_color(self, cmd, color):
         self.write_cmd(cmd)
         self.write_data(color)
+
+    def blk(self, value=None):
+        if value is None:
+            return self.blk_value
+        self.blk_value = value
+        duty_u16 = int(65535 * value)
+        self.blk_pwm.duty_u16(duty_u16)
 
 
 def split_data(data, step):
