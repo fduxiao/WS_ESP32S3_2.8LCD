@@ -1,8 +1,6 @@
 from machine import *
 import i8080
-from .board import Board
-from .st7796 import ST7796I80
-from .gt911 import GT911
+from anti_gm import Board, ST7796I80, GT911
 
 
 i8080.clean_all()
@@ -36,3 +34,6 @@ class MyBoard(Board):
     i2c_en = Pin(21, Pin.OUT, value=0)
 
     touch = GT911(i2c, addr=0x14, int=Pin(13), rst=Pin(14, Pin.OUT, value=0))
+
+
+board = MyBoard()
