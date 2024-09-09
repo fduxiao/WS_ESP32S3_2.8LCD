@@ -1,7 +1,9 @@
 from machine import *
 import i8080
 from .board import Board
-from . import st7796
+from .st7796 import ST7796I80
+from .gt911 import GT911
+
 
 i8080.clean_all()
 
@@ -22,7 +24,7 @@ class MyBoard(Board):
     scr_width = 320
     scr_height = 480
 
-    display = st7796.ST7796I80(
+    display = ST7796I80(
         rst=7, blk=6,
         cs=10, dc=9, wr=46,
         data=[3, 20, 19, 8, 18, 17, 16, 15],
@@ -31,9 +33,6 @@ class MyBoard(Board):
     )
 
     i2c = I2C(1, scl=Pin(12), sda=Pin(11), freq=400000)
-
-    scr_int = Pin(13)
-    scr_cres = Pin(14, Pin.OUT, value=0)
     i2c_en = Pin(21, Pin.OUT, value=0)
 
-    touch_addr = 0x14
+    touch = GT911(i2c, addr=0x14, int=Pin(13), rst=Pin(14, Pin.OUT, value=0))
