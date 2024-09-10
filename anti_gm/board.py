@@ -44,3 +44,6 @@ class Board:
 
     def deinit(self):
         self.display.deinit()
+
+    def blk(self, value=None):
+        return self.display.blk(value)

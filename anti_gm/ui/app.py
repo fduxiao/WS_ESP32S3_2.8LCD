@@ -93,3 +93,10 @@ class UIApp:
         led1.set_size(20, 20)
 
         slider.add_event(lambda e: led1.set_brightness(slider.get_value() * 2), lv.EVENT.VALUE_CHANGED, None)
+
+        slider2 = lv.slider(scr2)
+        slider2.set_value(100, lv.ANIM.OFF)
+        slider2.set_width(150)
+        slider2.align(lv.ALIGN.TOP_MID, 0, 100)
+
+        slider2.add_event(lambda e: self.board.blk(0.2 + slider2.get_value() / 100 * 0.8), lv.EVENT.VALUE_CHANGED, None)
