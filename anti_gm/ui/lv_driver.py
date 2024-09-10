@@ -1,16 +1,9 @@
 import lvgl as lv
-import lv_utils
 from blob import Blob
 
 
 class LVDispDriver:
     def __init__(self, width, height, factor=5, blit=None) -> None:
-        # initialize
-        if not lv.is_initialized():
-            lv.init()
-        # prepare the event loop
-        if not lv_utils.event_loop.is_running():
-            self.event_loop = lv_utils.event_loop()
 
         self.blit = blit
 
