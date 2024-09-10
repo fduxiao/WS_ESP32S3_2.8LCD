@@ -1,6 +1,6 @@
 from machine import *
 import i8080
-from anti_gm import Board, ST7796I80, GT911
+from anti_gm import Board, ST7796I80, GT911, UIApp
 
 
 i8080.clean_all()
@@ -36,4 +36,11 @@ class MyBoard(Board):
     touch = GT911(i2c, addr=0x14, int=Pin(13), rst=Pin(14, Pin.OUT, value=0))
 
 
+class MyApp(UIApp):
+    def main(self):
+        print('customized main')
+        return super().main()
+
+
 board = MyBoard()
+app = MyApp(board)

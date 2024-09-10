@@ -89,7 +89,7 @@ class GT911:
     def irq(self, func):
         self.int.irq(func, Pin.IRQ_RISING)
 
-    def read_period(self):
+    def read(self):
         status = self.read_reg(GT911_REG_TOUCH_NUM, 1)[0]
         if not (status & 0b1000_0000):
             return None
@@ -104,7 +104,7 @@ class GT911:
 
     def set_debug_irq(self):
         def print_info(_):
-            info = self.read_period()
+            info = self.read()
             if info is None:
                 return
             print(info)
