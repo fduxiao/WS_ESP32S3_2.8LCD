@@ -1,7 +1,7 @@
 # Library blob makes use of the heap alloc function of esp32.
 add_library(blob INTERFACE)
 target_sources(blob INTERFACE
-    ${CMAKE_CURRENT_LIST_DIR}/blob.c
+    ${CMAKE_CURRENT_LIST_DIR}/blob/blob.c
 )
 
 
@@ -20,8 +20,11 @@ target_sources(i8080 INTERFACE
 
 # Add the current directory as an include directory.
 target_include_directories(i8080 INTERFACE
-    ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/blob
 )
 
+# LVGL
+add_library(my_lvgl INTERFACE)
+include(${CMAKE_CURRENT_LIST_DIR}/lvgl/lvgl.cmake)
 # Link our INTERFACE library to the usermod target.
-target_link_libraries(usermod INTERFACE i8080 blob)
+target_link_libraries(usermod INTERFACE i8080 blob my_lvgl)

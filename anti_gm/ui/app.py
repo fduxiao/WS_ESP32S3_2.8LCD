@@ -55,15 +55,15 @@ class UIApp:
         # the example3 from lvgl
         scr1 = lv.obj()
         scr2 = lv.obj()
-        lv.scr_load(scr1)
+        lv.screen_load(scr1)
 
         # scr1
-        button1 = lv.btn(scr1)
+        button1 = lv.button(scr1)
         button1.align(lv.ALIGN.TOP_RIGHT, -5, 5)
         label = lv.label(button1)
         label.set_text(">")
 
-        button1.add_event(lambda e: lv.scr_load(scr2), lv.EVENT.CLICKED, None)
+        button1.add_event_cb(lambda e: lv.screen_load(scr2), lv.EVENT.CLICKED, None)
 
         # keyboard + textarea
         ta = lv.textarea(scr1)
@@ -76,12 +76,12 @@ class UIApp:
         kb.set_textarea(ta)
 
         # scr2
-        button2 = lv.btn(scr2)
+        button2 = lv.button(scr2)
         button2.align(lv.ALIGN.TOP_LEFT, 5, 5)
         label2 = lv.label(button2)
         label2.set_text("<")
 
-        button2.add_event(lambda e: lv.scr_load(scr1), lv.EVENT.CLICKED, None)
+        button2.add_event_cb(lambda e: lv.screen_load(scr1), lv.EVENT.CLICKED, None)
 
         slider = lv.slider(scr2)
         slider.set_width(150)
@@ -92,11 +92,11 @@ class UIApp:
         led1.set_brightness(slider.get_value() * 2)
         led1.set_size(20, 20)
 
-        slider.add_event(lambda e: led1.set_brightness(slider.get_value() * 2), lv.EVENT.VALUE_CHANGED, None)
+        slider.add_event_cb(lambda e: led1.set_brightness(slider.get_value() * 2), lv.EVENT.VALUE_CHANGED, None)
 
         slider2 = lv.slider(scr2)
         slider2.set_value(100, lv.ANIM.OFF)
         slider2.set_width(150)
         slider2.align(lv.ALIGN.TOP_MID, 0, 100)
 
-        slider2.add_event(lambda e: self.board.blk(0.2 + slider2.get_value() / 100 * 0.8), lv.EVENT.VALUE_CHANGED, None)
+        slider2.add_event_cb(lambda e: self.board.blk(0.2 + slider2.get_value() / 100 * 0.8), lv.EVENT.VALUE_CHANGED, None)

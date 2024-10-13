@@ -5,7 +5,7 @@ from blob import Blob
 class LVDispDriver:
     def __init__(self, width, height, factor=5, display=None) -> None:
         self.display = display
-        self.disp_drv = lv.disp_create(width, height)
+        self.disp_drv = lv.display_create(width, height)
 
         color_format = lv.COLOR_FORMAT.RGB565
         self.pixel_size = lv.color_format_get_size(color_format)
@@ -15,7 +15,7 @@ class LVDispDriver:
         buf_size = width * height * self.pixel_size // factor
         self.buf1 = Blob().malloc_dma(buf_size)
         self.buf2 = Blob().malloc_dma(buf_size)
-        self.disp_drv.set_draw_buffers(self.buf1.mv(), self.buf2.mv(), buf_size, lv.DISP_RENDER_MODE.PARTIAL)
+        self.disp_drv.set_buffers(self.buf1.mv(), self.buf2.mv(), buf_size, lv.DISPLAY_RENDER_MODE.PARTIAL)
 
         # self.disp_drv.set_render_mode(lv.DISPLAY_RENDER_MODE.PARTIAL)
         self.disp_drv.set_flush_cb(self.disp_drv_flush_cb)
