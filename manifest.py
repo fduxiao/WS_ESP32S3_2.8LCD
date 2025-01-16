@@ -1,5 +1,5 @@
 include("$(PORT_DIR)/boards/manifest.py")
 include("$(BOARD_DIR)/user_mods/lvgl/manifest.py")
-package("anti_gm")
+package("waveshare")
 module("rom_data.py")
 module("main.py")

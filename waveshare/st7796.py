@@ -1,4 +1,3 @@
-from i8080 import I8080
 from machine import Pin, PWM
 from micropython import const
 from time import sleep
@@ -240,31 +239,6 @@ def split_data(data, step):
     while start < len_data:
         yield mv[start:start+step]
         start += step
-
-
-class ST7796I80(ST7796):
-    def __init__(self, rst, cs, dc, blk, wr, data,
-                 width=320, height=480, rotation=0, offset_x=0, offset_y=0, dx=0, dy=0, freq=10_000_000) -> None:
-        self.i80_driver = I8080()
-        self.max_bytes = width * height * 2
-        self.i80_driver.init(cs=cs, dc=dc, wr=wr, data=data, freq=freq, max_bytes=self.max_bytes)
-
-        super().__init__(rst=rst, cs=None, dc=None, blk=blk,
-                         width=width, height=height, rotation=rotation,
-                         offset_x=offset_x, offset_y=offset_y, dx=dx, dy=dy)
-
-    def deinit(self):
-        super().deinit()
-        self.i80_driver.deinit()
-
-    def write_cmd(self, cmd, *args):
-        self.i80_driver.write_cmd(cmd, bytearray(args))
-
-    def write_data(self, data):
-        self.i80_driver.write_color(-1, data)
-
-    def write_color(self, cmd, color):
-        self.i80_driver.write_color(cmd, color)
 
 
 class ST7796PY(ST7796):

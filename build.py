@@ -11,7 +11,7 @@ LV_MOD = HERE / "user_mods" / "lvgl"
 LV_CMAKE = LV_MOD / "lvgl.cmake"
 LV_MANIFEST = LV_MOD / "manifest.py"
 LV_LIB = LV_MOD / "lib"
-BOARD="AntiGM"
+BOARD="WS_ESP32S3_2.8LCD"
 
 
 def prepare_env():

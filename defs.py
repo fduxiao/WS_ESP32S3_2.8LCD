@@ -1,13 +1,5 @@
 from machine import *
-import i8080
-from anti_gm import Board, ST7796I80, GT911, UIApp
-
-
-i8080.clean_all()
-
-# Some weird problem for D+, D-. See https://github.com/micropython/micropython/issues/11315.
-# PWM(Pin(19)).deinit()
-# PWM(Pin(20)).deinit()
+from waveshare import Board, ST7796PY, GT911, UIApp
 
 
 class MyBoard(Board):
@@ -22,7 +14,7 @@ class MyBoard(Board):
     scr_width = 320
     scr_height = 480
 
-    display = ST7796I80(
+    display = ST7796PY(
         rst=7, blk=6,
         cs=10, dc=9, wr=46,
         data=[3, 20, 19, 8, 18, 17, 16, 15],

@@ -2,7 +2,7 @@
 #undef MICROPY_HW_BOARD_NAME
 #endif
 
-#define MICROPY_HW_BOARD_NAME               "AntiGM (esp32s3 spiram octal)"
+#define MICROPY_HW_BOARD_NAME               "WS_ESP32S3_2.8LCD (esp32s3 spiram octal)"
 
 #define MICROPY_HW_MCU_NAME                 "ESP32S3"
 

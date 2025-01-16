@@ -5,16 +5,16 @@ set(LV_CFLAGS -DLV_COLOR_DEPTH=16 -DLV_COLOR_16_SWAP=1)
 set(SDKCONFIG_DEFAULTS
     boards/sdkconfig.base
     ${SDKCONFIG_IDF_VERSION_SPECIFIC}
-    # boards/sdkconfig.usb
+    boards/sdkconfig.usb
     boards/sdkconfig.ble
     boards/sdkconfig.240mhz
     boards/sdkconfig.spiram_sx
     boards/sdkconfig.spiram_oct
-    boards/AntiGM/sdkconfig.board
+    boards/WS_ESP32S3_2.8LCD/sdkconfig.board
 )
 
 list(APPEND MICROPY_DEF_BOARD
-    MICROPY_HW_BOARD_NAME="AntiGM"
+    MICROPY_HW_BOARD_NAME="WS_ESP32S3_2.8LCD"
 )
 
 

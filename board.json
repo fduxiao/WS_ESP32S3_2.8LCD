@@ -13,8 +13,8 @@
         "generic_s3.jpg"
     ],
     "mcu": "esp32s3",
-    "product": "AntiGM",
+    "product": "WS_ESP32S3_2.8LCD",
     "thumbnail": "",
-    "url": "https://www.espressif.com/en/products/modules",
-    "vendor": "Espressif"
+    "url": "https://www.waveshare.com/product/mcu-tools/development-boards/esp32/esp32-s3-touch-lcd-2.8.htm",
+    "vendor": "Waveshare"
 }
