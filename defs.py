@@ -1,5 +1,5 @@
 from machine import *
-from waveshare import Board, ST7789SPI, CST328, UIApp
+from waveshare import Board, ST7789SPI, CST328, UIApp, QMI8658
 
 
 class MyBoard(Board):
@@ -16,6 +16,7 @@ class MyBoard(Board):
     rtc_init = Pin(9)
     imu_init1 = Pin(13)
     imu_init2 = Pin(12)
+    imu = QMI8658(i2c)
 
     sd = SDCard(cs=Pin(21), mosi=Pin(17), sck=Pin(14), miso=Pin(16), slot=2)
     sd_d2 = Pin(15)

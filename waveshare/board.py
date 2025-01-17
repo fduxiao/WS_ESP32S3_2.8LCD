@@ -1,6 +1,7 @@
 from machine import *
 from .st7796 import ST7796
 from .cst328 import CST328
+from .qmi8658 import QMI8658
 
 
 class Board:
@@ -28,6 +29,7 @@ class Board:
 
     touch: CST328
     display: ST7796
+    imu: QMI8658
 
     def init_screen_and_touch(self):
         self.touch.init()
@@ -53,8 +55,14 @@ class Board:
         self.display.display_on()
         self.blk(1)
 
+        # i2c devices
+        self.imu.init()
+
     def deinit(self):
         self.display.deinit()
 
     def blk(self, value=None):
         return self.display.blk(value)
+
+    def read_imu(self):
+        return self.imu.read_accelerometer(), self.imu.read_gyproscope()
