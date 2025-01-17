@@ -17,7 +17,7 @@ class LVDispDriver:
         self.buf2 = Blob().malloc_dma(buf_size)
         self.disp_drv.set_buffers(self.buf1.mv(), self.buf2.mv(), buf_size, lv.DISPLAY_RENDER_MODE.PARTIAL)
 
-        # self.disp_drv.set_render_mode(lv.DISPLAY_RENDER_MODE.PARTIAL)
+        self.disp_drv.set_render_mode(lv.DISPLAY_RENDER_MODE.PARTIAL)
         self.disp_drv.set_flush_cb(self.disp_drv_flush_cb)
 
     def blit(self, area, data):
@@ -58,7 +58,10 @@ class LVTouchInput:
         if info.num == 0:
             data.state = lv.INDEV_STATE.RELEASED
             return
-        data.state = lv.INDEV_STATE.PRESSED
         pt = info.points[0]
+        if not pt.pressed:
+            lv.INDEV_STATE.RELEASED
+            return
+        data.state = lv.INDEV_STATE.PRESSED
         data.point.x = pt.x
         data.point.y = pt.y

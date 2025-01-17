@@ -31,5 +31,4 @@ class Writter:
 
 with open(rom_data, "w") as file:
     writter = Writter(file)
-    writter.freeze("data_main", HERE / "main.py")
     writter.freeze("data_defs", HERE / "defs.py")

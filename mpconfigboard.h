@@ -11,5 +11,5 @@
 // Enable UART REPL for modules that have an external USB-UART and don't use native USB.
 #define MICROPY_HW_ENABLE_UART_REPL         (1)
 
-#define MICROPY_HW_I2C0_SCL                 (9)
-#define MICROPY_HW_I2C0_SDA                 (8)
+#define MICROPY_HW_I2C0_SCL                 (3)
+#define MICROPY_HW_I2C0_SDA                 (1)

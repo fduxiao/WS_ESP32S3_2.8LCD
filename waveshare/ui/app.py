@@ -6,6 +6,8 @@ from ..board import Board
 
 
 class UIApp:
+    lv_disp_factor = 5
+
     def __init__(self, board: Board) -> None:
         self.board: Board = board
         self.width = board.scr_width
@@ -23,7 +25,8 @@ class UIApp:
         if not lv_utils.event_loop.is_running():
             self.lv_event_loop = lv_utils.event_loop(asynchronous=True)
 
-        self.lv_display_driver = LVDispDriver(self.width, self.height, display=self.board.display)
+        self.lv_display_driver = LVDispDriver(self.width, self.height, display=self.board.display,
+                                              factor=self.lv_disp_factor)
         self.lv_indev_driver = LVTouchInput(touch=self.board.touch)
 
     def deinit(self):
@@ -67,7 +70,7 @@ class UIApp:
 
         # keyboard + textarea
         ta = lv.textarea(scr1)
-        ta.set_width(320)
+        ta.set_width(240)
         ta.set_height(70)
         ta.align(lv.ALIGN.CENTER, 0, -70)
         ta.set_text("")
@@ -84,7 +87,7 @@ class UIApp:
         button2.add_event_cb(lambda e: lv.screen_load(scr1), lv.EVENT.CLICKED, None)
 
         slider = lv.slider(scr2)
-        slider.set_width(150)
+        slider.set_width(120)
         slider.align(lv.ALIGN.TOP_MID, 0, 15)
 
         led1 = lv.led(scr2)
@@ -96,7 +99,7 @@ class UIApp:
 
         slider2 = lv.slider(scr2)
         slider2.set_value(100, lv.ANIM.OFF)
-        slider2.set_width(150)
+        slider2.set_width(120)
         slider2.align(lv.ALIGN.TOP_MID, 0, 100)
 
         slider2.add_event_cb(lambda e: self.board.blk(0.2 + slider2.get_value() / 100 * 0.8), lv.EVENT.VALUE_CHANGED, None)

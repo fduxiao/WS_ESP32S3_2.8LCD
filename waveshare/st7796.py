@@ -1,4 +1,4 @@
-from machine import Pin, PWM
+from machine import Pin, PWM, SPI
 from micropython import const
 from time import sleep
 import struct
@@ -99,13 +99,16 @@ class ST7796(FrameBuffer):
         180: 0x48,
         270: 0x28
     }
+
     def __init__(self, rst, cs, dc, blk, width, height, rotation=180, offset_x=0, offset_y=0, dx=0, dy=0) -> None:
         self.rst = Pin(rst, Pin.OUT, value=1)
         if cs:
             self.cs = Pin(cs, Pin.OUT, value=1)
         if dc:
             self.dc = Pin(dc, Pin.OUT, value=0)
-        self.blk_pwm = PWM(Pin(blk), duty=1023, freq=800)
+        if isinstance(blk, int):
+            blk = Pin(blk, Pin.OUT, value=0)
+        self.blk_pwm = PWM(blk, duty=0, freq=800)
         self.blk_value = 0
         self.width = width
         self.height = height
@@ -274,3 +277,61 @@ class ST7796PY(ST7796):
         self.dc(1)
         for b in data:
             self.write_byte(b)
+
+
+class ST7796SPI(ST7796):
+    default_width = 320
+    default_height = 480
+
+    def __init__(self, rst, cs, dc, blk, spi: SPI,
+                 width=None, height=None, rotation=0, offset_x=0, offset_y=0, dx=0, dy=0) -> None:
+
+        self.spi = spi
+        super().__init__(rst=rst, cs=cs, dc=dc, blk=blk,
+                         width=width or self.default_width, height=height or self.default_height, rotation=rotation,
+                         offset_x=offset_x, offset_y=offset_y, dx=dx, dy=dy)
+
+    def write_cmd(self, command, *args):
+        self.dc(0)
+        self.cs(0)
+        self.spi.write(bytearray([command]))
+        self.cs(1)
+        if len(args) > 0:
+            self.write_data(bytearray(args))
+
+    def write_data(self, data):
+        self.dc(1)
+        self.cs(0)
+        self.spi.write(data)
+        self.cs(1)
+
+
+class ST7789SPI(ST7796SPI):
+    def init(self):
+        self.write_cmd(self.MADCTL, self.ST7796_MAD_RGB)
+        self.write_cmd(self.PIXFMT, 0x05)
+        self.write_cmd(0xB0, 0x00, 0xE8)
+        self.write_cmd(0xB2, 0x0C, 0x0C, 0x00, 0x33, 0x33)
+
+        self.write_cmd(0xB7, 0x75)
+        self.write_cmd(0xBB, 0x1A)
+
+        self.write_cmd(0xC0, 0x2C)
+        self.write_cmd(0xC2, 0x01, 0xFF)
+        self.write_cmd(0xC3, 0x13)
+        self.write_cmd(0xC4, 0x20)
+        self.write_cmd(0xC6, 0x0F)
+
+        self.write_cmd(0xD0, 0xA4, 0xA1)
+        self.write_cmd(0xD6, 0xA1)
+
+        self.write_cmd(self.GMCTRP1,
+                       0xD0, 0x0D, 0x14, 0x0D, 0x0D,
+                       0x09, 0x38, 0x44, 0x4E, 0x3A,
+                       0x17, 0x18, 0x2F, 0x30)
+        self.write_cmd(self.GMCTRN1,
+                       0xD0, 0x09, 0x0F, 0x08, 0x07,
+                       0x14, 0x37, 0x44, 0x4D, 0x38,
+                       0x15, 0x16, 0x2C, 0x2E)
+
+        self.write_cmd(self.INVON)

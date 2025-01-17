@@ -12,5 +12,4 @@ def ensure(path, data):
             file.write(data)
 
 
-ensure('main.py', rom_data.data_main)
 ensure('defs.py', rom_data.data_defs)

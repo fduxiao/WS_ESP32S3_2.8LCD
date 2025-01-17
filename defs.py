@@ -1,31 +1,40 @@
 from machine import *
-from waveshare import Board, ST7796PY, GT911, UIApp
+from waveshare import Board, ST7789SPI, CST328, UIApp
 
 
 class MyBoard(Board):
-    sd = SDCard(cs=Pin(42), mosi=Pin(41), sck=Pin(40), miso=Pin(39), slot=2)
+    key0 = Pin(0)
+    i2c_tp = I2C(1, scl=Pin(3), sda=Pin(1), freq=400_000)
+    touch = CST328(i2c_tp, addr=0x1A, int=Pin(4), rst=Pin(2, Pin.OUT, value=0))
 
-    gps_uart = UART(1, baudrate=9600, tx=2, rx=1)
-    gps_en = Pin(2, Pin.OUT, value=0)
+    lcd_blk = 5
+    key_bat = Pin(6)
+    bat_control = Pin(7)
+    bat_one_third = ADC(Pin(8))
 
-    light_adc = ADC(Pin(4))
-    half_bat_adc = ADC(Pin(5))
+    i2c = I2C(0, scl=Pin(10), sda=Pin(11), freq=400_000)
+    rtc_init = Pin(9)
+    imu_init1 = Pin(13)
+    imu_init2 = Pin(12)
 
-    scr_width = 320
-    scr_height = 480
+    sd = SDCard(cs=Pin(21), mosi=Pin(17), sck=Pin(14), miso=Pin(16), slot=2)
+    sd_d2 = Pin(15)
+    sd_d1 = Pin(18)
 
-    display = ST7796PY(
-        rst=7, blk=6,
-        cs=10, dc=9, wr=46,
-        data=[3, 20, 19, 8, 18, 17, 16, 15],
-        width=scr_width, height=scr_height,
-        dx=scr_width, dy=scr_height, rotation=180
-    )
+    i2s = I2S(0, sck=Pin(48),  # BCLK
+              ws=Pin(38),  # LRCK
+              sd=Pin(47),  # SDATA
+              mode=I2S.TX, bits=16, format=I2S.STEREO, rate=44100, ibuf=40000)  
 
-    i2c = I2C(1, scl=Pin(12), sda=Pin(11), freq=400000)
-    i2c_en = Pin(21, Pin.OUT, value=0)
+    pin_txd = Pin(43)
+    pin_rxd = Pin(44)
 
-    touch = GT911(i2c, addr=0x14, int=Pin(13), rst=Pin(14, Pin.OUT, value=0))
+    scr_width = 240
+    scr_height = 320
+    display = ST7789SPI(rst=39, cs=42, dc=41, blk=lcd_blk,
+                        spi=SPI(1, baudrate=20_000_000,  # polarity=0, phase=0, bits=8, firstbit=0,
+                                sck=Pin(40), mosi=Pin(45), miso=Pin(46)),
+                        width=scr_width, height=scr_height, dx=100, dy=100)
 
 
 class MyApp(UIApp):
