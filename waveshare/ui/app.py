@@ -12,6 +12,8 @@ class UIApp:
         self.board: Board = board
         self.width = board.scr_width
         self.height = board.scr_height
+        self.pages = []
+        self.imu_label = None
 
     def init(self):
         # hardware init
@@ -42,31 +44,54 @@ class UIApp:
             i += 1
             i %= 3600
 
+    async def update_imu(self):
+        while True:
+            if self.imu_label is None:
+                continue
+            (ax, ay, az), (gx, gy, gz) = self.board.read_imu()
+            self.imu_label.set_text(f"imu data: {ax:.1f}, {ay:.1f}, {az:.1f}")
+            await sleep(0.1)
+
     def setup_tasks(self):
         create_task(self.heart_beat())
+        create_task(self.update_imu())
 
     def run_forever(self):
         return Loop.run_forever()
 
     def main(self):
         self.init()
-        self.setup_tasks()
         self.main_scr()
+        self.setup_tasks()
         self.run_forever()
+
+    def add_page(self):
+        scr = lv.obj()
+        page_prev = None
+        if len(self.pages) > 0:
+            page_prev = self.pages[-1]
+        if page_prev:
+            btn_next = lv.button(page_prev)
+
+            btn_next.align(lv.ALIGN.TOP_RIGHT, -5, 5)
+            label = lv.label(btn_next)
+            label.set_text(">")
+            btn_next.add_event_cb(lambda e: lv.screen_load(scr), lv.EVENT.CLICKED, None)
+
+            btn_prev = lv.button(scr)
+            btn_prev.align(lv.ALIGN.TOP_LEFT, 5, 5)
+            label2 = lv.label(btn_prev)
+            label2.set_text("<")
+
+            btn_prev.add_event_cb(lambda e: lv.screen_load(page_prev), lv.EVENT.CLICKED, None)
+        else:
+            lv.screen_load(scr)
+        self.pages.append(scr)
+        return scr
 
     def main_scr(self):
         # the example3 from lvgl
-        scr1 = lv.obj()
-        scr2 = lv.obj()
-        lv.screen_load(scr1)
-
-        # scr1
-        button1 = lv.button(scr1)
-        button1.align(lv.ALIGN.TOP_RIGHT, -5, 5)
-        label = lv.label(button1)
-        label.set_text(">")
-
-        button1.add_event_cb(lambda e: lv.screen_load(scr2), lv.EVENT.CLICKED, None)
+        scr1 = self.add_page()
 
         # keyboard + textarea
         ta = lv.textarea(scr1)
@@ -78,13 +103,7 @@ class UIApp:
         kb = lv.keyboard(scr1)
         kb.set_textarea(ta)
 
-        # scr2
-        button2 = lv.button(scr2)
-        button2.align(lv.ALIGN.TOP_LEFT, 5, 5)
-        label2 = lv.label(button2)
-        label2.set_text("<")
-
-        button2.add_event_cb(lambda e: lv.screen_load(scr1), lv.EVENT.CLICKED, None)
+        scr2 = self.add_page()
 
         slider = lv.slider(scr2)
         slider.set_width(120)
@@ -103,3 +122,9 @@ class UIApp:
         slider2.align(lv.ALIGN.TOP_MID, 0, 100)
 
         slider2.add_event_cb(lambda e: self.board.blk(0.2 + slider2.get_value() / 100 * 0.8), lv.EVENT.VALUE_CHANGED, None)
+
+        scr3 = self.add_page()
+        label = lv.label(scr3)
+        label.align(lv.ALIGN.TOP_MID, 0, 100)
+        label.set_text("imu data:")
+        self.imu_label = label
