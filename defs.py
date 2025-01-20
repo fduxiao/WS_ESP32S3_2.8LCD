@@ -22,10 +22,13 @@ class MyBoard(Board):
     sd_d2 = Pin(15)
     sd_d1 = Pin(18)
 
+    i2s_rate = 44100
+    i2s_bits = 16
+    i2s_buf_size = 40000
     i2s = I2S(0, sck=Pin(48),  # BCLK
               ws=Pin(38),  # LRCK
               sd=Pin(47),  # SDATA
-              mode=I2S.TX, bits=16, format=I2S.STEREO, rate=44100, ibuf=40000)  
+              mode=I2S.TX, bits=i2s_bits, format=I2S.STEREO, rate=i2s_rate, ibuf=i2s_buf_size)  
 
     pin_txd = Pin(43)
     pin_rxd = Pin(44)

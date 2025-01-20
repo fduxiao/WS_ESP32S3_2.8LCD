@@ -128,3 +128,28 @@ class UIApp:
         label.align(lv.ALIGN.TOP_MID, 0, 100)
         label.set_text("imu data:")
         self.imu_label = label
+
+        scr4 = self.add_page()
+        btn = lv.button(scr4)
+        btn.align(lv.ALIGN.TOP_MID, 0, 50)
+        label = lv.label(btn)
+        label.set_text("play sound")
+
+        def play_music(e):
+            from math import pi, sin
+            time = 1
+            freq = 440
+            omega = 2 * pi * freq
+            step = 1 / self.board.i2s_rate
+            data = bytearray()
+            amp = 1 << (self.board.i2s_bits - 1)
+            amp /= 4
+            for i in range(time * self.board.i2s_rate):
+                value = amp * sin(step * i * omega)
+                value = int(value)
+                for _ in range(self.board.i2s_bits // 8):
+                    data.append(value & 0xff)
+                    value >>= 8
+            self.board.i2s.write(data)
+            print('play music')
+        btn.add_event_cb(play_music, lv.EVENT.CLICKED, None)

@@ -22,6 +22,9 @@ class Board:
     sd_d2: Pin
     sd_d1: Pin
 
+    i2s_rate: int
+    i2s_bits: int
+    i2s_buf_size: int
     i2s: I2S
 
     pin_rxd: Pin
