@@ -1,5 +1,7 @@
 from machine import *
-from waveshare import Board, ST7789SPI, CST328, UIApp, QMI8658
+import lvgl as lv
+from asyncio import create_task, sleep
+from waveshare import Board, ST7789SPI, CST328, UIApp, QMI8658, Page
 
 
 class MyBoard(Board):
@@ -41,7 +43,46 @@ class MyBoard(Board):
                         width=scr_width, height=scr_height, dx=100, dy=100)
 
 
+class HelloWorldPage(Page):
+    def __init__(self, board):
+        super().__init__(board)
+        label = lv.label(self)
+        label.align(lv.ALIGN.TOP_MID, 0, 100)
+        label.set_text("Hello world")
+
+        label = lv.label(self)
+        label.align(lv.ALIGN.TOP_MID, 0, 200)
+        self.label = label
+        self.task = None
+        self.t = 0
+
+    def on_load(self):
+        self.label.set_text("tick: ")
+        return super().on_load()
+    
+    async def timer(self):
+        while True:
+            self.label.set_text(f"tick: {self.t}")
+            self.t += 1
+            self.t %= 3600
+            await sleep(1)
+    
+    def on_activate(self):
+        if self.task is not None:
+            self.task.cancel()
+        self.task = create_task(self.timer())
+    
+    def on_deactivate(self):
+        if self.task is not None:
+            self.task.cancel()
+            self.task = None
+
+
 class MyApp(UIApp):
+    def setup_pages(self):
+        self.add_page(HelloWorldPage)
+        super().setup_pages()
+
     def main(self):
         print('customized main')
         return super().main()
