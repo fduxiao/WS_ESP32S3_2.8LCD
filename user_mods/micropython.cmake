@@ -13,5 +13,7 @@ target_include_directories(blob INTERFACE
 # LVGL
 add_library(my_lvgl INTERFACE)
 include(${CMAKE_CURRENT_LIST_DIR}/lvgl/lvgl.cmake)
+# ulab
+include(${CMAKE_CURRENT_LIST_DIR}/micropython-ulab/code/micropython.cmake)
 # Link our INTERFACE library to the usermod target.
 target_link_libraries(usermod INTERFACE blob my_lvgl)
