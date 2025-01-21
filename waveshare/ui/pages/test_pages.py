@@ -1,5 +1,5 @@
 import lvgl as lv
-from asyncio import sleep, create_task
+from asyncio import sleep, create_task, StreamWriter
 from .base import Page
 
 
@@ -76,20 +76,49 @@ class MusicPage(Page):
         label.set_text("play sound")
         btn.add_event_cb(self.play_music, lv.EVENT.CLICKED, None)
 
+        self.i2s = board.i2s
+        self.batch = 5000
+        self.step = 1 / self.board.i2s_rate
+        self.amp = 1 << (self.board.i2s_bits - 1)
+        self.amp /= 4
+        self.buf_size = self.board.i2s_buf_size
+
+        self.total_tick = 3 * self.board.i2s_rate
+        self.task = None
+
     def play_music(self, e):
-        from math import pi, sin
-        time = 1
-        freq = 440
-        omega = 2 * pi * freq
-        step = 1 / self.board.i2s_rate
-        data = bytearray()
-        amp = 1 << (self.board.i2s_bits - 1)
-        amp /= 4
-        for i in range(time * self.board.i2s_rate):
-            value = amp * sin(step * i * omega)
-            value = int(value)
-            for _ in range(self.board.i2s_bits // 8):
-                data.append(value & 0xff)
-                value >>= 8
-        self.board.i2s.write(data)
-        print('play music')
+        print("play music")
+        if self.task is not None:
+            self.task.cancel()
+        self.task = create_task(self.play())
+
+    def on_deactivate(self):
+        self.task.cancel()
+        self.task = None
+
+    def get_samples(self, freq, tick):
+        from ulab import numpy as np
+        # calculate one batch
+        values = np.array(range(self.batch))
+        values += tick
+        values *= self.step
+        values = self.amp * np.sin(values * 2 * np.pi * freq)
+        # cast to int16
+        values = np.array(values, dtype=np.int16)
+        # reshape to make left and right channels
+        values = values.reshape((-1, 1))
+        values = np.concatenate((values, values), axis=1).reshape(-1)
+        values = values.tobytes()
+        return values
+
+    async def play(self):
+        from rom_data import data_wav
+        # freq = 440
+        tick = 0
+        writter = StreamWriter(self.i2s)
+        while tick < len(data_wav):
+            # data = self.get_samples(freq, tick)
+            data = data_wav[tick:tick+self.batch]
+            tick += self.batch
+            writter.write(data)
+            await writter.drain()
